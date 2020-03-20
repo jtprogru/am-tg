@@ -1,0 +1,11 @@
+*~
+.DS_Store
+venv/
+env/
+.idea/
+__pycache__/
+.env
+.vscode/
+data-test.json
+test.py
+test.sh
