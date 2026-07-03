@@ -1,45 +1,51 @@
-import json
 import logging
+import sys
+from contextlib import asynccontextmanager
 
-from flask import Flask, Response, request
-from flask_basicauth import BasicAuth
+import httpx
+import uvicorn
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
-from am_tg.config import ConfigMap
-from am_tg.utils import post_to_tg, prep_msg
-
-app = Flask(__name__)
-app.config.from_object(ConfigMap)
-
-basic_auth = BasicAuth(app)
-
-
-@app.route('/alert', methods=['POST'])
-def alert():
-    content = json.loads(str(request.get_data().decode("utf-8")))
-    print(content)
-    with open("output.txt", "w") as text_file:
-        text_file.write("{0}".format(content))
-    try:
-        message = prep_msg(content)
-        print('[*] Returned message: \n {}'.format(message))
-
-        print(post_to_tg(msg=message, chat_id=app.config['TG_CHAT_ID'], tg_token=app.config['TG_TOKEN']))
-        return "Alert OK", 200
-    except:
-        print(post_to_tg(msg="<b>Broken data</b>", chat_id=app.config['TG_CHAT_ID'], tg_token=app.config['TG_TOKEN']))
-        return "Alert NotOK", 200
+from am_tg import __version__
+from am_tg.api import router
+from am_tg.config import Settings
+from am_tg.telegram import TelegramClient, TelegramSendError
 
 
-@app.route('/')
-def hello_world():
-    return 'Hello World!\n'
+def create_app(settings: Settings | None = None) -> FastAPI:
+    settings = settings or Settings()
+    logging.basicConfig(
+        stream=sys.stdout,
+        level=settings.log_level.upper(),
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        timeout = httpx.Timeout(10.0, connect=5.0)
+        async with httpx.AsyncClient(timeout=timeout) as http:
+            app.state.telegram = TelegramClient(
+                http, settings.bot_token.get_secret_value(), settings.telegram_api_base
+            )
+            yield
+
+    app = FastAPI(title="am-tg", version=__version__, lifespan=lifespan)
+    app.state.settings = settings
+    app.include_router(router)
+    app.add_exception_handler(TelegramSendError, _telegram_send_error_handler)
+    return app
 
 
-@app.route("/favicon.ico")
-def favicon():
-    return Response('FUCK YOU', 200, mimetype='image/x-icon')
+async def _telegram_send_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    # 502 makes Alertmanager retry the notification instead of silently dropping it.
+    return JSONResponse(status_code=502, content={"detail": f"failed to deliver to Telegram: {exc}"})
 
 
-if __name__ == '__main__':
-    logging.basicConfig(filename=ConfigMap.LOG_FILE, level=logging.DEBUG)
-    app.run(host='127.0.0.1', port=9119)
+def main() -> None:
+    settings = Settings()
+    uvicorn.run(create_app(settings), host=settings.host, port=settings.port)
+
+
+if __name__ == "__main__":
+    main()

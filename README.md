@@ -33,11 +33,20 @@ apt install supervisor
 
 ### Configure and Run
 
-Add `TG_TOKEN` and `TG_CHAT_ID` to [start_app.sh](start_app.sh).
+All settings come from environment variables. Legacy names are still accepted as aliases:
 
-Change `USER` and `GROUP` if you need it in [start_app.sh](start_app.sh).
+| Variable | Legacy alias | Description |
+|---|---|---|
+| `AM_TG_BOT_TOKEN` | `TG_TOKEN` | Telegram bot token (required) |
+| `AM_TG_CHAT_ID` | `TG_CHAT_ID` | Target chat id (required) |
+| `AM_TG_BASIC_AUTH_USERNAME` | `BA_UNAME` | Basic auth login (required) |
+| `AM_TG_BASIC_AUTH_PASSWORD` | `BA_UPASS` | Basic auth password (required) |
+| `AM_TG_HOST` / `AM_TG_PORT` | — | Bind address, default `127.0.0.1:9119` |
+| `AM_TG_LOG_LEVEL` | — | Log level, default `INFO` |
 
-Change `BA_UNAME` and `BA_UPASS` in [start_app.sh](start_app.sh). This is a login/password for basic authentication in Flask application.
+Export them in the environment (or set in [start_app.sh](start_app.sh) — but do not commit real secrets).
+
+Response contract: a malformed payload gets `422`; a Telegram delivery failure gets `502`, so Alertmanager retries the notification instead of silently losing it.
 
 Link config file for supervisor:
 ```bash

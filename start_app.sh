@@ -1,29 +1,24 @@
 #!/bin/bash
 
-FLASKDIR=/opt/am-tg          # Flask project directory
-LOGFILE=/var/log/am-tg.log   # Log file for app
+APPDIR=/opt/am-tg            # Project directory
 BIND_ADDR=127.0.0.1          # Bind address
 BIND_PORT=9119               # Bind port
-USER=zabbix                  # User to run as
-GROUP=zabbix                 # Group to run as
-NUM_WORKERS=2                # How many worker processes should Gunicorn spawn
+NUM_WORKERS=2                # How many uvicorn workers to spawn
 
-echo "Starting $NAME as `whoami`"
+echo "Starting am-tg as `whoami`"
 
-# Activate the virtual environment (created with `uv sync`)
-cd $FLASKDIR && \
-source ./.venv/bin/activate
-export PYTHONPATH=$FLASKDIR:$PYTHONPATH
-export TG_TOKEN='1234:asdasd'
-export TG_CHAT_ID='-123123'
-export BA_UNAME='basicauthuser'
-export BA_UPASS='basicauthpass'
+cd $APPDIR || exit 1
 
-# Start your Flask app
-# Programs meant to be run under supervisor should not daemonize themselves (do not use --daemon)
-exec ./.venv/bin/gunicorn am_tg.main:app \
-  --workers $NUM_WORKERS \
-  --user=$USER --group=$GROUP \
-  --bind=$BIND_ADDR:$BIND_PORT \
-  --log-level=debug \
-  --log-file=$LOGFILE
+# Secrets: replace the placeholders below or export the variables
+# in the environment / supervisor config instead of keeping them here.
+export TG_TOKEN='REPLACE_ME'
+export TG_CHAT_ID='REPLACE_ME'
+export BA_UNAME='REPLACE_ME'
+export BA_UPASS='REPLACE_ME'
+
+# Programs meant to be run under supervisor should not daemonize themselves.
+# Logs go to stdout; supervisor captures them (stdout_logfile).
+exec ./.venv/bin/uvicorn am_tg.main:create_app --factory \
+  --host $BIND_ADDR \
+  --port $BIND_PORT \
+  --workers $NUM_WORKERS
