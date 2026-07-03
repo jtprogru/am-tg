@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 
 from am_tg import __version__
 from am_tg.api import router
+from am_tg.auth import StaticTokenAuthProvider
 from am_tg.config import Settings
 from am_tg.metrics import BUILD_INFO, MetricsMiddleware
 from am_tg.telegram import TelegramClient, TelegramSendError
@@ -33,6 +34,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="am-tg", version=__version__, lifespan=lifespan)
     app.state.settings = settings
+    # Ordered list: first provider to recognize the credentials wins.
+    # A JWT provider for non-Alertmanager clients can be appended later.
+    app.state.auth_providers = [StaticTokenAuthProvider(settings.auth_tokens())]
     app.add_middleware(MetricsMiddleware)
     app.include_router(router)
     app.add_exception_handler(TelegramSendError, _telegram_send_error_handler)

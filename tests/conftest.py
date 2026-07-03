@@ -1,4 +1,3 @@
-import base64
 import json
 from pathlib import Path
 
@@ -10,6 +9,7 @@ from am_tg.main import create_app
 
 TEST_BOT_TOKEN = "123:test"
 TEST_CHAT_ID = "-100123"
+TEST_SOURCE_TOKEN = "sekret-prod-token"
 TG_API_BASE = "https://tg.test"
 SEND_MESSAGE_URL = f"{TG_API_BASE}/bot{TEST_BOT_TOKEN}/sendMessage"
 
@@ -21,8 +21,7 @@ def settings() -> Settings:
     return Settings(
         bot_token=TEST_BOT_TOKEN,
         chat_id=TEST_CHAT_ID,
-        basic_auth_username="testuser",
-        basic_auth_password="testpass",
+        tokens={TEST_SOURCE_TOKEN: "prod"},
         telegram_api_base=TG_API_BASE,
     )
 
@@ -41,6 +40,5 @@ def amwebhook() -> dict:
     return json.loads((FIXTURES / "amwebhook.json").read_text())
 
 
-def basic_auth(user: str = "testuser", password: str = "testpass") -> dict[str, str]:
-    token = base64.b64encode(f"{user}:{password}".encode()).decode()
-    return {"Authorization": f"Basic {token}"}
+def bearer(token: str = TEST_SOURCE_TOKEN) -> dict[str, str]:
+    return {"Authorization": f"Bearer {token}"}

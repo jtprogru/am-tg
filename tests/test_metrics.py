@@ -4,7 +4,7 @@ import httpx
 import pytest
 
 from am_tg.main import create_app
-from conftest import SEND_MESSAGE_URL, basic_auth
+from conftest import SEND_MESSAGE_URL, bearer
 
 
 @pytest.fixture()
@@ -21,7 +21,7 @@ def metric_value(text: str, sample: str) -> float:
 
 async def test_alert_metrics_recorded(client, amwebhook, tg_ok):
     before = (await client.get("/metrics")).text
-    resp = await client.post("/alert", json=amwebhook, headers=basic_auth())
+    resp = await client.post("/alert", json=amwebhook, headers=bearer())
     assert resp.status_code == 200
     after = (await client.get("/metrics")).text
 

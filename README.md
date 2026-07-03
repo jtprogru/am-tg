@@ -39,10 +39,12 @@ All settings come from environment variables. Legacy names are still accepted as
 |---|---|---|
 | `AM_TG_BOT_TOKEN` | `TG_TOKEN` | Telegram bot token (required) |
 | `AM_TG_CHAT_ID` | `TG_CHAT_ID` | Target chat id (required) |
-| `AM_TG_BASIC_AUTH_USERNAME` | `BA_UNAME` | Basic auth login (required) |
-| `AM_TG_BASIC_AUTH_PASSWORD` | `BA_UPASS` | Basic auth password (required) |
+| `AM_TG_TOKENS` | — | JSON map of bearer token → source name: `{"s3cr3t": "prod"}` |
+| `AM_TG_TOKEN` + `AM_TG_SOURCE_NAME` | — | Single-source shorthand instead of `AM_TG_TOKENS` |
 | `AM_TG_HOST` / `AM_TG_PORT` | — | Bind address, default `127.0.0.1:9119` |
 | `AM_TG_LOG_LEVEL` | — | Log level, default `INFO` |
+
+At least one bearer token is required (`AM_TG_TOKENS` or `AM_TG_TOKEN`) — the app refuses to start without it. The token authenticates an incoming webhook and identifies which Alertmanager sent it (the source name appears in logs).
 
 Export them in the environment (or set in [start_app.sh](start_app.sh) — but do not commit real secrets).
 
@@ -69,15 +71,16 @@ touch /var/log/am-tg.log  # $LOGFILE in start_app.sh
 
 ### Add to Alertmanager
 
-Add to Alertmanager this config:
+Add to Alertmanager this config (requires Alertmanager >= 0.22):
 ```yaml
 receivers:
 - name: 'webhook_tg'
   webhook_configs:
   - url: 'http://127.0.0.1:9119/alert'
     http_config:
-      basic_auth:
-        username: 'basicauthuser'
-        password: 'basicauthpass'
+      authorization:
+        credentials: 's3cr3t'   # must match a token from AM_TG_TOKENS / AM_TG_TOKEN
 ```
-Then add `webhook_tg` in `route` as a `reciever`. After edit `alertmanager.yml` you need to reload Alertmanager.
+Then add `webhook_tg` in `route` as a `receiver`. After editing `alertmanager.yml` you need to reload Alertmanager.
+
+> Migration note: basic auth was removed in favor of bearer tokens. Update `alertmanager.yml` together with deploying this version, otherwise Alertmanager gets `401` (and will keep retrying, so nothing is lost on a brief overlap).

@@ -13,10 +13,10 @@ cd $APPDIR || exit 1
 
 # Secrets: replace the placeholders below or export the variables
 # in the environment / supervisor config instead of keeping them here.
-export TG_TOKEN='REPLACE_ME'
-export TG_CHAT_ID='REPLACE_ME'
-export BA_UNAME='REPLACE_ME'
-export BA_UPASS='REPLACE_ME'
+export TG_TOKEN='REPLACE_ME'       # Telegram bot token
+export TG_CHAT_ID='REPLACE_ME'     # target chat id
+export AM_TG_TOKEN='REPLACE_ME'    # bearer token Alertmanager sends in webhook_configs
+export AM_TG_SOURCE_NAME='default' # name of this alert source (shows up in logs)
 
 # Programs meant to be run under supervisor should not daemonize themselves.
 # Logs go to stdout; supervisor captures them (stdout_logfile).
