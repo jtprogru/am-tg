@@ -1,0 +1,25 @@
+route:
+  receiver: am-tg-prod
+  group_by: [alertname]
+  group_wait: 5s
+  group_interval: 1m
+  repeat_interval: 3m
+  routes:
+    - matchers:
+        - env = staging
+      receiver: am-tg-staging
+
+receivers:
+  - name: am-tg-prod
+    webhook_configs:
+      - url: http://am-tg:9119/alert
+        http_config:
+          authorization:
+            credentials: dev-token-prod
+
+  - name: am-tg-staging
+    webhook_configs:
+      - url: http://am-tg:9119/alert
+        http_config:
+          authorization:
+            credentials: dev-token-staging

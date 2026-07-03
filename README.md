@@ -96,8 +96,26 @@ Suggested alert: fire on `am_tg_telegram_sends_total{outcome="client_error"}` in
 ## Development
 
 ```bash
-uv sync            # install deps (creates .venv)
-uv run ruff check  # lint
-uv run pytest      # tests
-uv run uvicorn am_tg.main:create_app --factory   # run locally
+make install   # uv sync
+make lint      # ruff check + format check
+make test      # pytest
+make run       # uvicorn with reload (reads .env)
+make help      # everything else
 ```
+
+### Full local stack (Prometheus + Alertmanager + Grafana)
+
+```bash
+make dev-up
+```
+
+Brings up the whole pipeline with a fake Telegram API (nginx stub), always-firing dev alerts feeding both sources, and a provisioned Grafana dashboard:
+
+| URL | What |
+|---|---|
+| http://localhost:3000 | Grafana (anonymous admin) → dashboard **am-tg / Service Health** |
+| http://localhost:9090 | Prometheus (scrapes am-tg every 5s, dev + health alert rules) |
+| http://localhost:9093 | Alertmanager (routes prod/staging alerts to am-tg with different tokens) |
+| http://localhost:9119 | am-tg itself |
+
+The dashboard covers service state, delivery success rate, webhook/alert rates, latency quantiles (HTTP and Telegram send), send outcomes, and permanent Telegram rejections. `make dev-down` stops the stack.

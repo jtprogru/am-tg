@@ -1,0 +1,52 @@
+groups:
+  # Always-firing alerts that keep the am-tg pipeline busy in dev:
+  # one routed to the prod source, one to staging (see alertmanager.yml).
+  - name: dev-traffic
+    interval: 15s
+    rules:
+      - alert: DevWatchdogProd
+        expr: vector(1)
+        labels:
+          severity: info
+          env: prod
+        annotations:
+          description: "Always-firing dev alert exercising the prod source."
+
+      - alert: DevWatchdogStaging
+        expr: vector(1)
+        labels:
+          severity: info
+          env: staging
+        annotations:
+          description: "Always-firing dev alert exercising the staging source."
+
+  # Real health rules for am-tg itself — the same ones worth shipping to prod.
+  - name: am-tg-health
+    rules:
+      - alert: AmTgDown
+        expr: up{job="am-tg"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          env: prod
+        annotations:
+          description: "am-tg is not responding to scrapes."
+
+      - alert: AmTgTelegramClientErrors
+        expr: increase(am_tg_telegram_sends_total{outcome="client_error"}[10m]) > 0
+        labels:
+          severity: critical
+          env: prod
+        annotations:
+          description: "Telegram permanently rejects messages for source {{ $labels.source }} (bad chat_id or revoked bot token); Alertmanager keeps retrying."
+
+      - alert: AmTgDeliveryFailing
+        expr: |
+          sum(rate(am_tg_telegram_sends_total{outcome!="success"}[10m]))
+            / clamp_min(sum(rate(am_tg_telegram_sends_total[10m])), 1e-9) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          env: prod
+        annotations:
+          description: "More than 20% of Telegram sends are failing."

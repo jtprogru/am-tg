@@ -1,0 +1,15 @@
+# Dev sources: tokens are plain fake values, delivery goes to tg-stub.
+defaults:
+  bot_token: "000000:dev-bot-token"
+
+sources:
+  - name: prod
+    title: "Production (dev)"
+    token: dev-token-prod
+    chat_id: -100111
+    external_url: http://localhost:9090
+
+  - name: staging
+    title: "Staging (dev)"
+    token: dev-token-staging
+    chat_id: -100222

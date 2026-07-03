@@ -4,7 +4,7 @@
 -include .env
 export
 
-.PHONY: help install lint fmt test ci run docker-build docker-run compose-up compose-down helm-lint helm-template clean
+.PHONY: help install lint fmt test ci run docker-build docker-run compose-up compose-down dev-up dev-down dev-logs helm-lint helm-template clean
 
 help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*?##/ {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -43,6 +43,15 @@ compose-up: ## Start via docker compose (builds if needed)
 
 compose-down: ## Stop docker compose services
 	docker compose down
+
+dev-up: ## Start the dev stack: am-tg + prometheus + alertmanager + grafana (:3000)
+	docker compose -f dev/docker-compose.yml up -d --build
+
+dev-down: ## Stop the dev stack
+	docker compose -f dev/docker-compose.yml down
+
+dev-logs: ## Tail am-tg logs from the dev stack
+	docker compose -f dev/docker-compose.yml logs -f am-tg
 
 helm-lint: ## Lint the Helm chart
 	helm lint deploy/helm/am-tg
