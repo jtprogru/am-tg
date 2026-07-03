@@ -1,0 +1,11 @@
+{{- if not .Values.existingSourcesSecret }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "am-tg.fullname" . }}
+  labels:
+    {{- include "am-tg.labels" . | nindent 4 }}
+data:
+  sources.yaml: |
+    {{- toYaml .Values.sources | nindent 4 }}
+{{- end }}

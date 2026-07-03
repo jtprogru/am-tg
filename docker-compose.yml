@@ -1,0 +1,18 @@
+services:
+  am-tg:
+    build: .
+    image: am-tg:local
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9119:9119"
+    # Tokens referenced as ${VAR} in sources.yaml come from .env (see .env.example)
+    env_file: .env
+    environment:
+      AM_TG_SOURCES_FILE: /etc/am-tg/sources.yaml
+    volumes:
+      - ./sources.yaml:/etc/am-tg/sources.yaml:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9119/readyz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

@@ -1,0 +1,19 @@
+am-tg {{ .Chart.AppVersion }} deployed.
+
+In-cluster webhook URL for Alertmanager:
+
+  http://{{ include "am-tg.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}/alert
+
+Alertmanager receiver snippet (requires Alertmanager >= 0.22):
+
+  receivers:
+    - name: telegram
+      webhook_configs:
+        - url: 'http://{{ include "am-tg.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}/alert'
+          http_config:
+            authorization:
+              credentials: '<token of the matching source>'
+
+Check readiness:
+
+  kubectl -n {{ .Release.Namespace }} get pods -l app.kubernetes.io/instance={{ .Release.Name }}

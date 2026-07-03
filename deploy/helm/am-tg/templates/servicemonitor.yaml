@@ -1,0 +1,24 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{- if .Capabilities.APIVersions.Has "monitoring.coreos.com/v1" }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "am-tg.fullname" . }}
+  labels:
+    {{- include "am-tg.labels" . | nindent 4 }}
+    {{- with .Values.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "am-tg.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.serviceMonitor.interval }}
+      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+{{- else }}
+{{- fail "serviceMonitor.enabled=true but the cluster has no monitoring.coreos.com/v1 API (prometheus-operator)" }}
+{{- end }}
+{{- end }}

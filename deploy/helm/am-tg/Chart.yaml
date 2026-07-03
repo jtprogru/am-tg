@@ -1,0 +1,7 @@
+apiVersion: v2
+name: am-tg
+description: Alertmanager to Telegram webhook bridge
+type: application
+version: 0.1.0
+appVersion: "0.2.0"
+home: https://github.com/jtprog/am-tg
