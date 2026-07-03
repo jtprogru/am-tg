@@ -13,3 +13,4 @@ __pycache__/
 data-test.json
 test.py
 test.sh
+.coverage

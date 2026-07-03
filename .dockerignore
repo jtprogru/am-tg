@@ -19,3 +19,4 @@ sources.yaml
 sources.example.yaml
 *.md
 !README.md
+.coverage

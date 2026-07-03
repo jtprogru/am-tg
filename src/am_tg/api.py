@@ -44,9 +44,7 @@ async def alert(
     auth: Annotated[AuthContext, Depends(authenticated_source)],
 ) -> dict[str, str]:
     source = request.app.state.sources[auth.source_name]
-    logger.info(
-        "received webhook: source=%s %d alert(s), status=%s", source.name, len(payload.alerts), payload.status
-    )
+    logger.info("received webhook: source=%s %d alert(s), status=%s", source.name, len(payload.alerts), payload.status)
     record_alerts([a.status for a in payload.alerts], source.name)
     if not payload.alerts:
         return {"status": "ok", "detail": "no alerts in payload"}

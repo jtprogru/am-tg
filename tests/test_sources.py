@@ -114,3 +114,52 @@ def test_file_and_env_sources_combine(sources_yaml):
     settings = Settings(sources_file=sources_yaml, bot_token="1:x", chat_id="-42", token="tok-env")
     sources = load_sources(settings)
     assert {s.name for s in sources} == {"prod", "staging", "default"}
+
+
+def test_missing_sources_file_is_clean_error(tmp_path):
+    settings = Settings(sources_file=tmp_path / "nope.yaml")
+    with pytest.raises(ValueError, match="cannot read sources file"):
+        load_sources(settings)
+
+
+def test_invalid_yaml_is_clean_error(tmp_path):
+    path = tmp_path / "sources.yaml"
+    path.write_text("sources: [unclosed\n  - broken")
+    with pytest.raises(ValueError, match="invalid YAML"):
+        load_sources(Settings(sources_file=path))
+
+
+def test_top_level_list_is_clean_error(tmp_path):
+    path = tmp_path / "sources.yaml"
+    path.write_text("- name: x\n- name: y\n")
+    with pytest.raises(ValueError, match="expected a mapping"):
+        load_sources(Settings(sources_file=path))
+
+
+def test_env_sources_without_chat_id_fail():
+    settings = Settings(bot_token="1:x", token="tok")  # no chat_id
+    with pytest.raises(ValueError, match="AM_TG_CHAT_ID"):
+        load_sources(settings)
+
+
+def test_env_sources_without_bot_token_fail():
+    settings = Settings(chat_id="-1", token="tok")  # no bot token
+    with pytest.raises(ValueError, match="AM_TG_BOT_TOKEN"):
+        load_sources(settings)
+
+
+def test_file_and_env_source_name_collision_rejected(tmp_path):
+    path = tmp_path / "sources.yaml"
+    path.write_text("sources:\n  - {name: default, token: t-file, chat_id: -1, bot_token: b}\n")
+    settings = Settings(sources_file=path, bot_token="1:x", chat_id="-42", token="t-env")
+    # env single token maps to source_name "default" -> collides with the file
+    with pytest.raises(ValueError, match="duplicate source names"):
+        load_sources(settings)
+
+
+def test_load_sources_defends_against_unvalidated_settings():
+    # Settings validation normally guarantees at least one source; if it is
+    # bypassed (model_construct), load_sources still fails loudly
+    settings = Settings.model_construct(sources_file=None, tokens={}, token=None)
+    with pytest.raises(ValueError, match="no alert sources configured"):
+        load_sources(settings)

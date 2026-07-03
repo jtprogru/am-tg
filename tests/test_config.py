@@ -6,9 +6,13 @@ from am_tg.config import Settings
 
 def _clear_env(monkeypatch):
     for var in (
-        "TG_TOKEN", "TG_CHAT_ID",
-        "AM_TG_BOT_TOKEN", "AM_TG_CHAT_ID",
-        "AM_TG_TOKENS", "AM_TG_TOKEN", "AM_TG_SOURCE_NAME",
+        "TG_TOKEN",
+        "TG_CHAT_ID",
+        "AM_TG_BOT_TOKEN",
+        "AM_TG_CHAT_ID",
+        "AM_TG_TOKENS",
+        "AM_TG_TOKEN",
+        "AM_TG_SOURCE_NAME",
     ):
         monkeypatch.delenv(var, raising=False)
 

@@ -74,8 +74,16 @@ def _interpolate(text: str) -> str:
 
 
 def _file_sources(settings: Settings) -> list[Source]:
-    raw = _interpolate(settings.sources_file.read_text())
-    data = yaml.safe_load(raw) or {}
+    path = settings.sources_file
+    try:
+        raw = _interpolate(path.read_text())
+        data = yaml.safe_load(raw) or {}
+    except OSError as exc:
+        raise ValueError(f"cannot read sources file {path}: {exc}") from exc
+    except yaml.YAMLError as exc:
+        raise ValueError(f"invalid YAML in sources file {path}: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ValueError(f"sources file {path}: expected a mapping with a 'sources' list")
     defaults = data.get("defaults") or {}
     default_bot_token = defaults.get("bot_token")
     items = data.get("sources") or []

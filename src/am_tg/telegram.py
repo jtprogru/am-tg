@@ -100,5 +100,5 @@ def _error_description(resp: httpx.Response) -> str:
 def _retry_after(resp: httpx.Response, default: float) -> float:
     try:
         return float(resp.json()["parameters"]["retry_after"])
-    except (ValueError, KeyError, TypeError):
+    except ValueError, KeyError, TypeError:
         return default

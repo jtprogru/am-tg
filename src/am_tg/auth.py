@@ -51,9 +51,7 @@ async def authenticated_source(
 ) -> AuthContext:
     """Resolve the caller through the app's ordered provider list (401 otherwise)."""
     if credentials is None:
-        raise HTTPException(
-            status.HTTP_401_UNAUTHORIZED, "Not authenticated", headers={"WWW-Authenticate": "Bearer"}
-        )
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated", headers={"WWW-Authenticate": "Bearer"})
     for provider in request.app.state.auth_providers:
         context = await provider.authenticate(credentials.credentials)
         if context is not None:

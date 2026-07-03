@@ -3,6 +3,7 @@ import re
 import httpx
 import pytest
 
+from am_tg import telegram
 from am_tg.main import create_app
 from conftest import SEND_MESSAGE_URL, bearer
 
@@ -71,3 +72,46 @@ async def test_readyz_not_ready_without_lifespan(settings):
 async def test_metrics_needs_no_auth(client):
     resp = await client.get("/metrics")
     assert resp.status_code == 200
+
+
+async def test_failure_metrics_recorded(client, amwebhook, respx_mock, monkeypatch):
+    monkeypatch.setattr(telegram, "RETRY_DELAYS", (0, 0))
+    respx_mock.post(SEND_MESSAGE_URL).mock(return_value=httpx.Response(500, json={"ok": False}))
+
+    before = (await client.get("/metrics")).text
+    resp = await client.post("/alert", json=amwebhook, headers=bearer())
+    assert resp.status_code == 502
+    after = (await client.get("/metrics")).text
+
+    exhausted = 'am_tg_telegram_sends_total{outcome="retry_exhausted",source="prod"}'
+    assert metric_value(after, exhausted) - metric_value(before, exhausted) == 1
+
+    http_502 = 'am_tg_http_requests_total{handler="/alert",method="POST",status="502"}'
+    assert metric_value(after, http_502) - metric_value(before, http_502) == 1
+
+    # Alerts are counted as received even when delivery fails
+    fired = 'am_tg_alerts_received_total{source="prod",status="firing"}'
+    assert metric_value(after, fired) - metric_value(before, fired) == 2
+
+
+async def test_unexpected_alert_status_collapses_to_other(client, amwebhook, tg_ok):
+    amwebhook["alerts"][0]["status"] = "totally-unexpected"
+    before = (await client.get("/metrics")).text
+    await client.post("/alert", json=amwebhook, headers=bearer())
+    after = (await client.get("/metrics")).text
+
+    other = 'am_tg_alerts_received_total{source="prod",status="other"}'
+    assert metric_value(after, other) - metric_value(before, other) == 1
+    # No am_tg_alerts_received_total{status="totally-unexpected"} label leak
+    assert "totally-unexpected" not in after
+
+
+async def test_unmatched_path_collapses_to_unmatched_handler(client):
+    before = (await client.get("/metrics")).text
+    resp = await client.get("/definitely/not/a/route")
+    assert resp.status_code == 404
+    after = (await client.get("/metrics")).text
+
+    unmatched = 'am_tg_http_requests_total{handler="unmatched",method="GET",status="404"}'
+    assert metric_value(after, unmatched) - metric_value(before, unmatched) == 1
+    assert 'handler="/definitely/not/a/route"' not in after

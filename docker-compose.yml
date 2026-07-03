@@ -6,7 +6,9 @@ services:
     ports:
       - "127.0.0.1:9119:9119"
     # Tokens referenced as ${VAR} in sources.yaml come from .env (see .env.example)
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
       AM_TG_SOURCES_FILE: /etc/am-tg/sources.yaml
     volumes:

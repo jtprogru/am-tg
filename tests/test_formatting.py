@@ -1,5 +1,5 @@
 from am_tg.config import Source
-from am_tg.formatting import TELEGRAM_MESSAGE_LIMIT, TRUNCATION_MARKER, render_message
+from am_tg.formatting import TELEGRAM_MESSAGE_LIMIT, TRUNCATION_MARKER, _truncate, render_message
 from am_tg.models import Alert, AlertmanagerWebhook
 
 SOURCE = Source(name="prod", token="t", chat_id="-1", bot_token="1:b")
@@ -75,3 +75,42 @@ def test_truncation_respects_limit_and_line_boundary():
     body = text.removesuffix(TRUNCATION_MARKER)
     for line in body.split("\n"):
         assert line.count("<b>") == line.count("</b>")
+
+
+def test_truncation_of_single_oversized_line():
+    # One line longer than the whole limit: the line-boundary search fails
+    # and the hard-cut fallback must still respect the limit
+    alert = make_alert(annotations={"description": "y" * 6000})
+    text = render_message(AlertmanagerWebhook(alerts=[alert]), SOURCE)
+    assert len(text) <= TELEGRAM_MESSAGE_LIMIT
+    assert text.endswith(TRUNCATION_MARKER)
+
+
+def test_missing_timestamps_skip_lines():
+    firing = Alert(status="firing", labels={"alertname": "A"})  # no startsAt
+    resolved = Alert(status="resolved", labels={"alertname": "B"})  # no endsAt
+    text = render_message(AlertmanagerWebhook(alerts=[firing, resolved]), SOURCE)
+    assert "Detected:" not in text
+    assert "Resolved:" not in text
+
+
+def test_view_url_rebase_without_query():
+    source = SOURCE.model_copy(update={"external_url": "https://prom.pub.example.com"})
+    alert = make_alert(generatorURL="http://prom-internal:9090/graph")
+    text = render_message(AlertmanagerWebhook(alerts=[alert]), source)
+    assert 'href="https://prom.pub.example.com/graph"' in text
+
+
+def test_view_url_rebase_onto_path_prefix():
+    source = SOURCE.model_copy(update={"external_url": "https://ops.example.com/prometheus/"})
+    alert = make_alert(generatorURL="http://prom-internal:9090/graph?g0.expr=up")
+    text = render_message(AlertmanagerWebhook(alerts=[alert]), source)
+    assert 'href="https://ops.example.com/prometheus/graph?g0.expr=up"' in text
+
+
+def test_truncate_hard_cut_when_no_line_boundary():
+    # Defense in depth: a text with no newline at all cannot be cut on a
+    # line boundary, the hard cut must still respect the limit
+    text = _truncate("z" * 6000)
+    assert len(text) <= TELEGRAM_MESSAGE_LIMIT
+    assert text.endswith(TRUNCATION_MARKER)
