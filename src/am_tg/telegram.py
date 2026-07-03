@@ -1,7 +1,10 @@
 import asyncio
 import logging
+import time
 
 import httpx
+
+from am_tg.metrics import TELEGRAM_SEND_DURATION, TELEGRAM_SENDS
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +15,10 @@ RETRY_AFTER_CAP = 5.0  # honor Telegram 429 retry_after, but never hang Alertman
 class TelegramSendError(Exception):
     """Message could not be delivered to Telegram."""
 
+    def __init__(self, message: str, outcome: str) -> None:
+        super().__init__(message)
+        self.outcome = outcome
+
 
 class TelegramClient:
     def __init__(self, http: httpx.AsyncClient, token: str, api_base: str = "https://api.telegram.org") -> None:
@@ -20,6 +27,18 @@ class TelegramClient:
         self._api_base = api_base.rstrip("/")
 
     async def send_message(self, chat_id: str, text: str) -> None:
+        start = time.perf_counter()
+        try:
+            await self._send(chat_id, text)
+        except TelegramSendError as exc:
+            TELEGRAM_SENDS.labels(exc.outcome).inc()
+            raise
+        else:
+            TELEGRAM_SENDS.labels("success").inc()
+        finally:
+            TELEGRAM_SEND_DURATION.observe(time.perf_counter() - start)
+
+    async def _send(self, chat_id: str, text: str) -> None:
         url = f"{self._api_base}/bot{self._token}/sendMessage"
         body = {
             "chat_id": chat_id,
@@ -34,7 +53,8 @@ class TelegramClient:
             except httpx.HTTPError as exc:
                 logger.warning("Telegram request error (attempt %d/%d): %s", attempt, attempts, exc)
                 if attempt == attempts:
-                    raise TelegramSendError(f"network error after {attempts} attempts: {exc}") from exc
+                    outcome = "timeout" if isinstance(exc, httpx.TimeoutException) else "network_error"
+                    raise TelegramSendError(f"network error after {attempts} attempts: {exc}", outcome) from exc
                 await asyncio.sleep(RETRY_DELAYS[attempt - 1])
                 continue
 
@@ -46,13 +66,15 @@ class TelegramClient:
                 # Permanent error (bad chat_id, bad markup, revoked token):
                 # retrying cannot help, fail immediately and loudly.
                 logger.error("Telegram rejected message (HTTP %d): %s", resp.status_code, description)
-                raise TelegramSendError(f"telegram error {resp.status_code}: {description}")
+                raise TelegramSendError(f"telegram error {resp.status_code}: {description}", "client_error")
 
             logger.warning(
                 "Telegram send failed (HTTP %d, attempt %d/%d): %s", resp.status_code, attempt, attempts, description
             )
             if attempt == attempts:
-                raise TelegramSendError(f"telegram error {resp.status_code} after {attempts} attempts: {description}")
+                raise TelegramSendError(
+                    f"telegram error {resp.status_code} after {attempts} attempts: {description}", "retry_exhausted"
+                )
 
             delay = RETRY_DELAYS[attempt - 1]
             if resp.status_code == 429:

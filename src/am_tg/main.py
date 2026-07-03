@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from am_tg import __version__
 from am_tg.api import router
 from am_tg.config import Settings
+from am_tg.metrics import BUILD_INFO, MetricsMiddleware
 from am_tg.telegram import TelegramClient, TelegramSendError
 
 
@@ -32,8 +33,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="am-tg", version=__version__, lifespan=lifespan)
     app.state.settings = settings
+    app.add_middleware(MetricsMiddleware)
     app.include_router(router)
     app.add_exception_handler(TelegramSendError, _telegram_send_error_handler)
+    BUILD_INFO.labels(__version__).set(1)
     return app
 
 

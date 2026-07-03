@@ -3,7 +3,9 @@
 APPDIR=/opt/am-tg            # Project directory
 BIND_ADDR=127.0.0.1          # Bind address
 BIND_PORT=9119               # Bind port
-NUM_WORKERS=2                # How many uvicorn workers to spawn
+# Keep a single worker: /metrics uses an in-process registry, with several
+# workers each scrape would hit a random worker's counters.
+NUM_WORKERS=1
 
 echo "Starting am-tg as `whoami`"
 

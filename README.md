@@ -48,6 +48,16 @@ Export them in the environment (or set in [start_app.sh](start_app.sh) — but d
 
 Response contract: a malformed payload gets `422`; a Telegram delivery failure gets `502`, so Alertmanager retries the notification instead of silently losing it.
 
+### Monitoring
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /metrics` | Prometheus metrics (`am_tg_*`: HTTP requests, alerts received, Telegram send outcomes/latency) |
+| `GET /healthz` | Liveness probe, always `200` |
+| `GET /readyz` | Readiness probe: `200` when the app is fully initialized |
+
+These endpoints are **not** protected by auth — keep the service on a private network / in-cluster and don't expose it publicly. Run a single worker per instance and scale with replicas: metrics live in an in-process registry.
+
 Link config file for supervisor:
 ```bash
 ln -s /opt/am-tg/app.supervisord.conf /etc/supervisor/conf.d/am-tg.conf
