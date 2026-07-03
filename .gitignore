@@ -1,7 +1,11 @@
 *~
 .DS_Store
 venv/
+.venv/
 env/
+output.txt
+.pytest_cache/
+.ruff_cache/
 .idea/
 __pycache__/
 .env

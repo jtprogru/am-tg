@@ -1,8 +1,11 @@
-from flask import Flask, Response, request
-from config import ConfigMap
-from flask_basicauth import BasicAuth
-from utils import *
+import json
 import logging
+
+from flask import Flask, Response, request
+from flask_basicauth import BasicAuth
+
+from am_tg.config import ConfigMap
+from am_tg.utils import post_to_tg, prep_msg
 
 app = Flask(__name__)
 app.config.from_object(ConfigMap)

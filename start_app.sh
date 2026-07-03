@@ -10,9 +10,9 @@ NUM_WORKERS=2                # How many worker processes should Gunicorn spawn
 
 echo "Starting $NAME as `whoami`"
 
-# Activate the virtual environment
+# Activate the virtual environment (created with `uv sync`)
 cd $FLASKDIR && \
-source ./venv/bin/activate
+source ./.venv/bin/activate
 export PYTHONPATH=$FLASKDIR:$PYTHONPATH
 export TG_TOKEN='1234:asdasd'
 export TG_CHAT_ID='-123123'
@@ -21,7 +21,7 @@ export BA_UPASS='basicauthpass'
 
 # Start your Flask app
 # Programs meant to be run under supervisor should not daemonize themselves (do not use --daemon)
-exec ./venv/bin/gunicorn app:app \
+exec ./.venv/bin/gunicorn am_tg.main:app \
   --workers $NUM_WORKERS \
   --user=$USER --group=$GROUP \
   --bind=$BIND_ADDR:$BIND_PORT \

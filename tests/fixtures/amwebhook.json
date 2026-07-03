@@ -1,0 +1,43 @@
+{
+  "version": "4",
+  "groupKey": "{}:{alertname=\"InstanceDown\"}",
+  "truncatedAlerts": 0,
+  "status": "firing",
+  "receiver": "webhook_tg",
+  "groupLabels": { "alertname": "InstanceDown" },
+  "commonLabels": { "alertname": "InstanceDown", "severity": "critical" },
+  "commonAnnotations": { "description": "Instance is down" },
+  "externalURL": "http://alertmanager.example.com",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "InstanceDown",
+        "instance": "node01.example.com:9100",
+        "severity": "critical"
+      },
+      "annotations": {
+        "description": "node01.example.com:9100 has been down for more than 5 minutes."
+      },
+      "startsAt": "2026-07-03T12:00:00.000Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus.example.com/graph?g0.expr=up%3D%3D0&g0.tab=1",
+      "fingerprint": "c4c8ff1b890c1405"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "InstanceDown",
+        "instance": "node02.example.com:9100",
+        "severity": "critical"
+      },
+      "annotations": {
+        "description": "node02.example.com:9100 has been down for more than 5 minutes."
+      },
+      "startsAt": "2026-07-03T12:01:00.000Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus.example.com/graph?g0.expr=up%3D%3D0&g0.tab=1",
+      "fingerprint": "a1b2c3d4e5f60708"
+    }
+  ]
+}

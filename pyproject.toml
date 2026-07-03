@@ -1,0 +1,41 @@
+[project]
+name = "am-tg"
+version = "0.0.1"
+description = "Send alerts from Alertmanager to Telegram"
+readme = "README.md"
+authors = [{ name = "Mikhail Savin", email = "mail@jtprog.ru" }]
+requires-python = ">=3.14"
+dependencies = [
+    "flask>=3.1",
+    "flask-basicauth>=0.2",
+    "gunicorn>=23.0",
+    "requests>=2.32",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28",
+    "pytest>=8.4",
+    "ruff>=0.14",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/am_tg"]
+
+[tool.ruff]
+line-length = 120
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# Legacy Flask code is replaced wholesale in stage 2 (FastAPI rewrite);
+# behavior-affecting findings are ignored here instead of fixed.
+[tool.ruff.lint.per-file-ignores]
+"src/am_tg/{main,utils,config}.py" = ["E722", "UP030", "UP032", "B007"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

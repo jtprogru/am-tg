@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding=utf-8
 # Created by JTProgru / JTProg
 # Date: 18.03.2020
 # https://jtprog.ru/
@@ -9,6 +8,7 @@ __version__ = '0.0.1'
 __author_email__ = 'mail@jtprog.ru'
 
 import json
+
 import requests
 
 

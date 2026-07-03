@@ -1,12 +1,22 @@
 # am-tg
 
-Send alert from [Alertmanager](https://prometheus.io/docs/alerting/alertmanager/) to Telegram. Writen on `python3` (Python 3.8).
+Send alert from [Alertmanager](https://prometheus.io/docs/alerting/alertmanager/) to Telegram. Written in Python 3.14, dependencies are managed with [uv](https://docs.astral.sh/uv/).
 
 ### Install
 
-Clone this repo:
+Clone this repo and install dependencies:
 ```bash
 git clone https://github.com/jtprog/am-tg.git /opt/am-tg
+cd /opt/am-tg
+uv sync
+```
+
+### Development
+
+```bash
+uv sync            # install deps (creates .venv)
+uv run ruff check  # lint
+uv run pytest      # tests
 ```
 
 ### Prepare server
