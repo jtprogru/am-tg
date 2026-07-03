@@ -1,0 +1,22 @@
+# Alert sources: which Alertmanager is calling (by bearer token) and where
+# its alerts go in Telegram. Point AM_TG_SOURCES_FILE at a copy of this file.
+#
+# ${VAR} references are replaced from the environment at startup (the app
+# refuses to start if a variable is missing), so the file itself can live
+# in a ConfigMap while tokens stay in a Secret.
+
+defaults:
+  bot_token: ${TG_BOT_TOKEN}          # used by sources without their own bot_token
+
+sources:
+  - name: prod                        # unique; shows up in logs, metrics and the message
+    title: "Production"               # optional pretty name for the message header
+    token: ${AM_TG_TOKEN_PROD}        # bearer token this Alertmanager authenticates with
+    chat_id: -100123456789
+    message_thread_id: 42             # optional: forum topic id
+    external_url: https://prometheus.example.com   # optional: rebase alert links onto a reachable host
+
+  - name: staging
+    token: ${AM_TG_TOKEN_STAGING}
+    chat_id: -100987654321
+    bot_token: ${TG_BOT_TOKEN_STAGING}  # optional: per-source bot override

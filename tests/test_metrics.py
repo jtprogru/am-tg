@@ -25,10 +25,10 @@ async def test_alert_metrics_recorded(client, amwebhook, tg_ok):
     assert resp.status_code == 200
     after = (await client.get("/metrics")).text
 
-    fired = 'am_tg_alerts_received_total{status="firing"}'
+    fired = 'am_tg_alerts_received_total{source="prod",status="firing"}'
     assert metric_value(after, fired) - metric_value(before, fired) == 2  # fixture has 2 firing alerts
 
-    sends = 'am_tg_telegram_sends_total{outcome="success"}'
+    sends = 'am_tg_telegram_sends_total{outcome="success",source="prod"}'
     assert metric_value(after, sends) - metric_value(before, sends) == 1
 
     requests = 'am_tg_http_requests_total{handler="/alert",method="POST",status="200"}'

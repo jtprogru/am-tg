@@ -33,39 +33,11 @@ def test_new_env_names_win(monkeypatch):
     assert s.bot_token.get_secret_value() == "1:new"
 
 
-def test_tokens_json_map(monkeypatch):
+def test_no_sources_is_startup_error(monkeypatch):
     _clear_env(monkeypatch)
     monkeypatch.setenv("TG_TOKEN", "1:x")
     monkeypatch.setenv("TG_CHAT_ID", "-1")
-    monkeypatch.setenv("AM_TG_TOKENS", '{"tok-a": "prod", "tok-b": "staging"}')
-    s = Settings()
-    assert s.auth_tokens() == {"tok-a": "prod", "tok-b": "staging"}
-
-
-def test_single_token_pair(monkeypatch):
-    _clear_env(monkeypatch)
-    monkeypatch.setenv("TG_TOKEN", "1:x")
-    monkeypatch.setenv("TG_CHAT_ID", "-1")
-    monkeypatch.setenv("AM_TG_TOKEN", "single-tok")
-    monkeypatch.setenv("AM_TG_SOURCE_NAME", "prod")
-    s = Settings()
-    assert s.auth_tokens() == {"single-tok": "prod"}
-
-
-def test_single_token_default_source_name(monkeypatch):
-    _clear_env(monkeypatch)
-    monkeypatch.setenv("TG_TOKEN", "1:x")
-    monkeypatch.setenv("TG_CHAT_ID", "-1")
-    monkeypatch.setenv("AM_TG_TOKEN", "single-tok")
-    s = Settings()
-    assert s.auth_tokens() == {"single-tok": "default"}
-
-
-def test_no_tokens_is_startup_error(monkeypatch):
-    _clear_env(monkeypatch)
-    monkeypatch.setenv("TG_TOKEN", "1:x")
-    monkeypatch.setenv("TG_CHAT_ID", "-1")
-    with pytest.raises(ValidationError, match="no auth tokens configured"):
+    with pytest.raises(ValidationError, match="no alert sources configured"):
         Settings()
 
 

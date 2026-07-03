@@ -43,14 +43,20 @@ async def alert(
     request: Request,
     auth: Annotated[AuthContext, Depends(authenticated_source)],
 ) -> dict[str, str]:
+    source = request.app.state.sources[auth.source_name]
     logger.info(
-        "received webhook: source=%s %d alert(s), status=%s", auth.source_name, len(payload.alerts), payload.status
+        "received webhook: source=%s %d alert(s), status=%s", source.name, len(payload.alerts), payload.status
     )
-    record_alerts([a.status for a in payload.alerts])
+    record_alerts([a.status for a in payload.alerts], source.name)
     if not payload.alerts:
         return {"status": "ok", "detail": "no alerts in payload"}
 
-    message = render_message(payload)
-    settings = request.app.state.settings
-    await request.app.state.telegram.send_message(settings.chat_id, message)
+    message = render_message(payload, source)
+    await request.app.state.telegram.send_message(
+        bot_token=source.bot_token.get_secret_value(),
+        chat_id=source.chat_id,
+        text=message,
+        message_thread_id=source.message_thread_id,
+        source=source.name,
+    )
     return {"status": "ok"}

@@ -37,14 +37,36 @@ All settings come from environment variables. Legacy names are still accepted as
 
 | Variable | Legacy alias | Description |
 |---|---|---|
-| `AM_TG_BOT_TOKEN` | `TG_TOKEN` | Telegram bot token (required) |
-| `AM_TG_CHAT_ID` | `TG_CHAT_ID` | Target chat id (required) |
+| `AM_TG_SOURCES_FILE` | — | Path to a YAML file describing alert sources (see below) |
+| `AM_TG_BOT_TOKEN` | `TG_TOKEN` | Default Telegram bot token (fallback for sources without their own) |
+| `AM_TG_CHAT_ID` | `TG_CHAT_ID` | Target chat id for env-configured sources |
 | `AM_TG_TOKENS` | — | JSON map of bearer token → source name: `{"s3cr3t": "prod"}` |
 | `AM_TG_TOKEN` + `AM_TG_SOURCE_NAME` | — | Single-source shorthand instead of `AM_TG_TOKENS` |
 | `AM_TG_HOST` / `AM_TG_PORT` | — | Bind address, default `127.0.0.1:9119` |
 | `AM_TG_LOG_LEVEL` | — | Log level, default `INFO` |
 
-At least one bearer token is required (`AM_TG_TOKENS` or `AM_TG_TOKEN`) — the app refuses to start without it. The token authenticates an incoming webhook and identifies which Alertmanager sent it (the source name appears in logs).
+At least one source must be configured (`AM_TG_SOURCES_FILE`, `AM_TG_TOKENS` or `AM_TG_TOKEN`) — the app refuses to start otherwise.
+
+### Multiple Alertmanager sources
+
+The bearer token both authenticates an incoming webhook and identifies which Alertmanager sent it. Each source routes to its own chat (optionally its own bot and forum topic), and the message is prefixed with `Source: <name>`. Sources are declared in a YAML file (see [sources.example.yaml](sources.example.yaml)):
+
+```yaml
+defaults:
+  bot_token: ${TG_BOT_TOKEN}
+sources:
+  - name: prod
+    title: "Production"
+    token: ${AM_TG_TOKEN_PROD}
+    chat_id: -100123456789
+    message_thread_id: 42                           # optional forum topic
+    external_url: https://prometheus.example.com    # optional link rebase
+  - name: staging
+    token: ${AM_TG_TOKEN_STAGING}
+    chat_id: -100987654321
+```
+
+`${VAR}` references are interpolated from the environment at startup (missing variable = startup error), so the file can be committed / mounted as a ConfigMap while secrets stay in the environment. Source names also appear as the `source` label on metrics. The single-chat env configuration (`AM_TG_TOKENS` / `AM_TG_TOKEN` + `AM_TG_CHAT_ID`) keeps working and maps to implicit sources.
 
 Export them in the environment (or set in [start_app.sh](start_app.sh) — but do not commit real secrets).
 

@@ -17,16 +17,17 @@ HTTP_REQUEST_DURATION = Histogram(
 ALERTS_RECEIVED = Counter(
     "am_tg_alerts_received_total",
     "Alerts received in webhook payloads",
-    ["status"],
+    ["status", "source"],
 )
 TELEGRAM_SENDS = Counter(
     "am_tg_telegram_sends_total",
     "Telegram sendMessage outcomes",
-    ["outcome"],
+    ["outcome", "source"],
 )
 TELEGRAM_SEND_DURATION = Histogram(
     "am_tg_telegram_send_duration_seconds",
     "Telegram sendMessage duration including retries",
+    ["source"],
 )
 BUILD_INFO = Gauge(
     "am_tg_build_info",
@@ -38,10 +39,10 @@ BUILD_INFO = Gauge(
 EXCLUDED_HANDLERS = {"/metrics", "/healthz", "/readyz"}
 
 
-def record_alerts(statuses: list[str]) -> None:
+def record_alerts(statuses: list[str], source: str) -> None:
     for status in statuses:
         # Guard label cardinality: the value comes from an external payload.
-        ALERTS_RECEIVED.labels(status if status in ("firing", "resolved") else "other").inc()
+        ALERTS_RECEIVED.labels(status if status in ("firing", "resolved") else "other", source).inc()
 
 
 class MetricsMiddleware(BaseHTTPMiddleware):

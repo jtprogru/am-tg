@@ -15,20 +15,34 @@ def fast_retries(monkeypatch):
 @pytest.fixture()
 async def tg():
     async with httpx.AsyncClient() as http:
-        yield TelegramClient(http, "123:test", "https://tg.test")
+        yield TelegramClient(http, "https://tg.test")
 
 
 async def test_success_first_try(tg, respx_mock):
     route = respx_mock.post(URL).mock(return_value=httpx.Response(200, json={"ok": True}))
-    await tg.send_message("-1", "hi")
+    await tg.send_message("123:test", "-1", "hi")
     assert route.call_count == 1
+
+
+async def test_message_thread_id_passed_through(tg, respx_mock):
+    route = respx_mock.post(URL).mock(return_value=httpx.Response(200, json={"ok": True}))
+    await tg.send_message("123:test", "-1", "hi", message_thread_id=42)
+    body = httpx.Response(200, content=route.calls.last.request.content).json()
+    assert body["message_thread_id"] == 42
+
+
+async def test_thread_id_omitted_by_default(tg, respx_mock):
+    route = respx_mock.post(URL).mock(return_value=httpx.Response(200, json={"ok": True}))
+    await tg.send_message("123:test", "-1", "hi")
+    body = httpx.Response(200, content=route.calls.last.request.content).json()
+    assert "message_thread_id" not in body
 
 
 async def test_retries_on_5xx_then_succeeds(tg, respx_mock):
     route = respx_mock.post(URL).mock(
         side_effect=[httpx.Response(500), httpx.Response(200, json={"ok": True})]
     )
-    await tg.send_message("-1", "hi")
+    await tg.send_message("123:test", "-1", "hi")
     assert route.call_count == 2
 
 
@@ -37,7 +51,7 @@ async def test_no_retry_on_4xx(tg, respx_mock):
         return_value=httpx.Response(400, json={"ok": False, "description": "Bad Request: chat not found"})
     )
     with pytest.raises(TelegramSendError, match="chat not found"):
-        await tg.send_message("-1", "hi")
+        await tg.send_message("123:test", "-1", "hi")
     assert route.call_count == 1
 
 
@@ -48,12 +62,12 @@ async def test_429_is_retried(tg, respx_mock):
             httpx.Response(200, json={"ok": True}),
         ]
     )
-    await tg.send_message("-1", "hi")
+    await tg.send_message("123:test", "-1", "hi")
     assert route.call_count == 2
 
 
 async def test_network_error_exhausts_retries(tg, respx_mock):
     route = respx_mock.post(URL).mock(side_effect=httpx.ConnectError("boom"))
     with pytest.raises(TelegramSendError, match="network error"):
-        await tg.send_message("-1", "hi")
+        await tg.send_message("123:test", "-1", "hi")
     assert route.call_count == 3

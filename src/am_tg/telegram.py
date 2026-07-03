@@ -21,31 +21,39 @@ class TelegramSendError(Exception):
 
 
 class TelegramClient:
-    def __init__(self, http: httpx.AsyncClient, token: str, api_base: str = "https://api.telegram.org") -> None:
+    def __init__(self, http: httpx.AsyncClient, api_base: str = "https://api.telegram.org") -> None:
         self._http = http
-        self._token = token
         self._api_base = api_base.rstrip("/")
 
-    async def send_message(self, chat_id: str, text: str) -> None:
+    async def send_message(
+        self,
+        bot_token: str,
+        chat_id: str,
+        text: str,
+        message_thread_id: int | None = None,
+        source: str = "default",
+    ) -> None:
         start = time.perf_counter()
         try:
-            await self._send(chat_id, text)
+            await self._send(bot_token, chat_id, text, message_thread_id)
         except TelegramSendError as exc:
-            TELEGRAM_SENDS.labels(exc.outcome).inc()
+            TELEGRAM_SENDS.labels(exc.outcome, source).inc()
             raise
         else:
-            TELEGRAM_SENDS.labels("success").inc()
+            TELEGRAM_SENDS.labels("success", source).inc()
         finally:
-            TELEGRAM_SEND_DURATION.observe(time.perf_counter() - start)
+            TELEGRAM_SEND_DURATION.labels(source).observe(time.perf_counter() - start)
 
-    async def _send(self, chat_id: str, text: str) -> None:
-        url = f"{self._api_base}/bot{self._token}/sendMessage"
+    async def _send(self, bot_token: str, chat_id: str, text: str, message_thread_id: int | None) -> None:
+        url = f"{self._api_base}/bot{bot_token}/sendMessage"
         body = {
             "chat_id": chat_id,
             "text": text,
             "parse_mode": "HTML",
             "disable_web_page_preview": True,
         }
+        if message_thread_id is not None:
+            body["message_thread_id"] = message_thread_id
         attempts = len(RETRY_DELAYS) + 1
         for attempt in range(1, attempts + 1):
             try:

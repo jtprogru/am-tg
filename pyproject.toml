@@ -1,6 +1,6 @@
 [project]
 name = "am-tg"
-version = "0.1.0"
+version = "0.2.0"
 description = "Send alerts from Alertmanager to Telegram"
 readme = "README.md"
 authors = [{ name = "Mikhail Savin", email = "mail@jtprog.ru" }]
@@ -10,6 +10,7 @@ dependencies = [
     "httpx>=0.28",
     "prometheus-client>=0.25.0",
     "pydantic-settings>=2.7",
+    "pyyaml>=6.0.3",
     "uvicorn[standard]>=0.34",
 ]
 
