@@ -44,14 +44,16 @@ compose-up: ## Start via docker compose (builds if needed)
 compose-down: ## Stop docker compose services
 	docker compose down
 
+DEV_COMPOSE = docker compose -f docker-compose.yml -f dev/docker-compose.yml
+
 dev-up: ## Start the dev stack: am-tg + prometheus + alertmanager + grafana (:3000)
-	docker compose -f dev/docker-compose.yml up -d --build
+	$(DEV_COMPOSE) up -d --build
 
 dev-down: ## Stop the dev stack
-	docker compose -f dev/docker-compose.yml down
+	$(DEV_COMPOSE) down
 
 dev-logs: ## Tail am-tg logs from the dev stack
-	docker compose -f dev/docker-compose.yml logs -f am-tg
+	$(DEV_COMPOSE) logs -f am-tg
 
 helm-lint: ## Lint the Helm chart
 	helm lint deploy/helm/am-tg
