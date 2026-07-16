@@ -59,11 +59,15 @@ docker compose up -d
 
 ### Kubernetes (Helm)
 
+From the published OCI chart:
+
 ```bash
-helm upgrade --install am-tg deploy/helm/am-tg \
+helm upgrade --install am-tg oci://ghcr.io/jtprogru/charts/am-tg --version 0.2.0 \
   --set existingSecret=am-tg-tokens \        # Secret with TG_BOT_TOKEN, AM_TG_TOKEN_* keys
   --values my-sources-values.yaml            # sources: block, serviceMonitor, resources...
 ```
+
+Or from the repo checkout: replace the chart reference with `deploy/helm/am-tg` (no `--version`).
 
 The chart renders the sources file into a ConfigMap (`.Values.sources`), exposes token env vars from an existing Secret (`existingSecret`, ExternalSecrets-friendly) or a chart-managed one (`secrets`, dev only), rolls the Deployment on config change via checksum annotations, and optionally creates a ServiceMonitor (`serviceMonitor.enabled=true`). Config changes require a rollout — there is no hot reload.
 
@@ -82,6 +86,10 @@ receivers:
 ```
 
 Then add `webhook_tg` in `route` as a `receiver` and reload Alertmanager.
+
+### Releases
+
+Pushing a tag `vX.Y.Z` (must match `version` in `pyproject.toml`) publishes two artifacts to GHCR: a multi-arch (amd64/arm64) Docker image `ghcr.io/jtprogru/am-tg` tagged `X.Y.Z`, `X.Y` and `latest`, and the Helm chart `oci://ghcr.io/jtprogru/charts/am-tg` with chart version and `appVersion` set to `X.Y.Z`.
 
 ## Monitoring
 
