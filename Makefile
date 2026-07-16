@@ -4,7 +4,7 @@
 -include .env
 export
 
-.PHONY: help install lint fmt test ci run docker-build docker-run compose-up compose-down dev-up dev-down dev-logs helm-lint helm-template clean
+.PHONY: help install lint fmt test ci run docker-build docker-run compose-up compose-down dev-up dev-down dev-logs helm-lint helm-template trivy trivy-fs trivy-config trivy-image clean
 
 help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*?##/ {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -54,6 +54,21 @@ dev-down: ## Stop the dev stack
 
 dev-logs: ## Tail am-tg logs from the dev stack
 	$(DEV_COMPOSE) logs -f am-tg
+
+# Severity threshold shared by all trivy targets; override: make trivy TRIVY_SEVERITY=MEDIUM,HIGH,CRITICAL
+TRIVY_SEVERITY = HIGH,CRITICAL
+TRIVY_FLAGS = --severity $(TRIVY_SEVERITY) --exit-code 1
+
+trivy: trivy-fs trivy-config trivy-image ## Run all Trivy checks (deps, secrets, IaC, image)
+
+trivy-fs: ## Trivy: scan Python dependencies (uv.lock) and secrets
+	trivy fs $(TRIVY_FLAGS) --ignore-unfixed --scanners vuln,secret .
+
+trivy-config: ## Trivy: scan IaC — Dockerfile, compose files, Helm chart, dev stack
+	trivy config $(TRIVY_FLAGS) .
+
+trivy-image: docker-build ## Trivy: scan the locally built image (am-tg:local)
+	trivy image $(TRIVY_FLAGS) --ignore-unfixed am-tg:local
 
 helm-lint: ## Lint the Helm chart
 	helm lint deploy/helm/am-tg

@@ -24,3 +24,22 @@ jobs:
 
       - name: Test
         run: uv run pytest -v --cov=am_tg --cov-report=term
+
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.3
+        with:
+          cache: true
+
+      - name: Scan dependencies and secrets
+        run: make trivy-fs
+
+      - name: Scan IaC (Dockerfile, compose, Helm chart)
+        run: make trivy-config
+
+      - name: Scan Docker image
+        run: make trivy-image
