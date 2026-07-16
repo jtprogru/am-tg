@@ -1,5 +1,7 @@
 # am-tg
 
+[![CI](https://github.com/jtprogru/am-tg/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jtprogru/am-tg/actions/workflows/ci.yml)
+
 Send alerts from [Alertmanager](https://prometheus.io/docs/alerting/alertmanager/) to Telegram. Written in Python 3.14 (FastAPI), dependencies are managed with [uv](https://docs.astral.sh/uv/).
 
 Multiple Alertmanager instances can send alerts to one am-tg: each source authenticates with its own bearer token and routes to its own chat (optionally its own bot and forum topic). Messages are HTML-formatted, prefixed with the source name, and grouped webhooks are delivered as a single message.
