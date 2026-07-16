@@ -1,6 +1,6 @@
 [project]
 name = "am-tg"
-version = "0.2.0"
+version = "0.2.1"
 description = "Send alerts from Alertmanager to Telegram"
 readme = "README.md"
 authors = [{ name = "Mikhail Savin", email = "mail@jtprog.ru" }]
