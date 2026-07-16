@@ -89,7 +89,7 @@ Then add `webhook_tg` in `route` as a `receiver` and reload Alertmanager.
 
 ### Releases
 
-Pushing a tag `vX.Y.Z` (must match `version` in `pyproject.toml`) publishes two artifacts to GHCR: a multi-arch (amd64/arm64) Docker image `ghcr.io/jtprogru/am-tg` tagged `X.Y.Z`, `X.Y` and `latest`, and the Helm chart `oci://ghcr.io/jtprogru/charts/am-tg` with chart version and `appVersion` set to `X.Y.Z`.
+Pushing a tag `vX.Y.Z` (must match `version` in `pyproject.toml`) publishes two artifacts to GHCR: a multi-arch (amd64/arm64) Docker image `ghcr.io/jtprogru/am-tg` tagged `X.Y.Z`, `X.Y` and `latest`, and the Helm chart `oci://ghcr.io/jtprogru/charts/am-tg` with chart version and `appVersion` set to `X.Y.Z`. Once both are published, a GitHub release is created automatically with usage instructions and an auto-generated changelog (no files attached — the artifacts live in GHCR).
 
 ## Monitoring
 
