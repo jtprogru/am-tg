@@ -1,14 +1,11 @@
 replicaCount: 1
-
 image:
-  repository: ghcr.io/jtprog/am-tg
-  tag: ""  # defaults to Chart.appVersion
+  repository: ghcr.io/jtprogru/am-tg
+  tag: "" # defaults to Chart.appVersion
   pullPolicy: IfNotPresent
-
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
-
 # Rendered verbatim into the sources.yaml ConfigMap. Keep tokens as ${VAR}
 # references resolved from the environment (see `secrets` / `existingSecret`).
 sources:
@@ -19,17 +16,14 @@ sources:
   #     title: "Production"
   #     token: ${AM_TG_TOKEN_PROD}
   #     chat_id: -100123456789
-
 # Mount the whole sources.yaml from an existing Secret (key: sources.yaml)
 # instead of rendering the ConfigMap above. For teams that consider the
 # routing config itself sensitive.
 existingSourcesSecret: ""
-
 # Name of an existing Secret whose keys are exposed as env vars
 # (TG_BOT_TOKEN, AM_TG_TOKEN_PROD, ...) — the production path, works
 # with ExternalSecrets / sealed-secrets.
 existingSecret: ""
-
 # Inline env secrets for dev/testing; rendered into a chart-managed Secret.
 # Prefer existingSecret in production.
 secrets: {}
@@ -44,20 +38,17 @@ env: []
 service:
   type: ClusterIP
   port: 9119
-
 serviceMonitor:
   enabled: false
   interval: 30s
   scrapeTimeout: 10s
   labels: {}
-
 resources:
   requests:
     cpu: 25m
     memory: 64Mi
   limits:
     memory: 128Mi
-
 podAnnotations: {}
 podLabels: {}
 nodeSelector: {}
