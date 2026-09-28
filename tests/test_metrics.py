@@ -1,4 +1,6 @@
 import re
+import tomllib
+from pathlib import Path
 
 import httpx
 import pytest
@@ -47,6 +49,12 @@ async def test_scrape_endpoints_not_counted(client):
 async def test_build_info_present(client):
     text = (await client.get("/metrics")).text
     assert re.search(r'am_tg_build_info\{version="[^"]+"\} 1\.0', text)
+
+
+async def test_build_info_matches_pyproject(client):
+    pyproject = tomllib.loads((Path(__file__).parents[1] / "pyproject.toml").read_text())
+    text = (await client.get("/metrics")).text
+    assert f'am_tg_build_info{{version="{pyproject["project"]["version"]}"}} 1.0' in text
 
 
 async def test_healthz(client):
