@@ -62,7 +62,7 @@ docker compose up -d
 From the published OCI chart:
 
 ```bash
-helm upgrade --install am-tg oci://ghcr.io/jtprogru/charts/am-tg --version 0.2.0 \
+helm upgrade --install am-tg oci://ghcr.io/jtprogru/charts/am-tg --version 0.2.2 \
   --set existingSecret=am-tg-tokens \        # Secret with TG_BOT_TOKEN, AM_TG_TOKEN_* keys
   --values my-sources-values.yaml            # sources: block, serviceMonitor, resources...
 ```
@@ -89,7 +89,7 @@ Then add `webhook_tg` in `route` as a `receiver` and reload Alertmanager.
 
 ### Releases
 
-Pushing a tag `vX.Y.Z` (must match `version` in `pyproject.toml`) publishes two artifacts to GHCR: a multi-arch (amd64/arm64) Docker image `ghcr.io/jtprogru/am-tg` tagged `X.Y.Z`, `X.Y` and `latest`, and the Helm chart `oci://ghcr.io/jtprogru/charts/am-tg` with chart version and `appVersion` set to `X.Y.Z`. Once both are published, a GitHub release is created automatically with usage instructions and an auto-generated changelog (no files attached — the artifacts live in GHCR).
+Bump the version with `make bump VERSION=X.Y.Z`: it updates `pyproject.toml`, `uv.lock`, the chart's `version`/`appVersion` in `deploy/helm/am-tg/Chart.yaml` and the Helm example above; a test fails CI if they drift apart. Pushing a tag `vX.Y.Z` (must match all of these versions, the release workflow checks it) publishes two artifacts to GHCR: a multi-arch (amd64/arm64) Docker image `ghcr.io/jtprogru/am-tg` tagged `X.Y.Z`, `X.Y` and `latest`, and the Helm chart `oci://ghcr.io/jtprogru/charts/am-tg` with chart version and `appVersion` set to `X.Y.Z`. Once both are published, a GitHub release is created automatically with usage instructions and an auto-generated changelog (no files attached — the artifacts live in GHCR).
 
 ## Monitoring
 

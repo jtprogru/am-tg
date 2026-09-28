@@ -4,7 +4,7 @@
 -include .env
 export
 
-.PHONY: help install lint fmt test ci run docker-build docker-run compose-up compose-down dev-up dev-down dev-logs helm-lint helm-template trivy trivy-fs trivy-config trivy-image clean
+.PHONY: help install lint fmt test ci run bump docker-build docker-run compose-up compose-down dev-up dev-down dev-logs helm-lint helm-template trivy trivy-fs trivy-config trivy-image clean
 
 help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*?##/ {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -27,6 +27,16 @@ ci: lint test ## Everything CI runs
 
 run: ## Run the app locally with reload (reads .env)
 	uv run uvicorn am_tg.main:create_app --factory --reload
+
+# One command per release: pyproject + uv.lock, chart version/appVersion, README helm example
+CHART_FILE = deploy/helm/am-tg/Chart.yaml
+
+bump: ## Set release version everywhere: make bump VERSION=X.Y.Z
+	@echo "$(VERSION)" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$$' || { echo "usage: make bump VERSION=X.Y.Z" >&2; exit 1; }
+	uv version $(VERSION)
+	sed -i.bak -E 's/^version: .*/version: $(VERSION)/; s/^appVersion: .*/appVersion: "$(VERSION)"/' $(CHART_FILE)
+	sed -i.bak -E 's|(charts/am-tg --version )[0-9]+\.[0-9]+\.[0-9]+|\1$(VERSION)|' README.md
+	rm -f $(CHART_FILE).bak README.md.bak
 
 docker-build: ## Build the Docker image (am-tg:local)
 	docker build -t am-tg:local .

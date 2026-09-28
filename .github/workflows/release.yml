@@ -18,14 +18,18 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Check tag matches pyproject version
+      - name: Check tag matches pyproject and chart versions
         run: |
           tag="${GITHUB_REF_NAME#v}"
           version="$(grep -m1 '^version' pyproject.toml | sed 's/.*"\(.*\)".*/\1/')"
-          if [ "$tag" != "$version" ]; then
-            echo "Tag v$tag does not match pyproject.toml version $version" >&2
-            exit 1
-          fi
+          chart_version="$(grep -m1 '^version:' deploy/helm/am-tg/Chart.yaml | awk '{print $2}')"
+          app_version="$(grep -m1 '^appVersion:' deploy/helm/am-tg/Chart.yaml | awk '{print $2}' | tr -d '"')"
+          for v in "$version" "$chart_version" "$app_version"; do
+            if [ "$tag" != "$v" ]; then
+              echo "Tag v$tag does not match: pyproject.toml=$version, Chart.yaml version=$chart_version appVersion=$app_version (run: make bump VERSION=$tag)" >&2
+              exit 1
+            fi
+          done
 
       - uses: docker/setup-qemu-action@v4
 
